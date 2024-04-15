@@ -14,6 +14,7 @@ int l;
 bit x;
 
 always@(posedge clk)
+  begin
 //NaN
 if(((a[15:7]==9'b111111111 && b[15:7]==9'b011111111 && cntl==0)||(a1[15:7]==9'b011111111 && b[15:7]==9'b111111111 && cntl==0)) )
 c<=16'b1111111111111111;
@@ -47,20 +48,26 @@ c[15]<=1'b1;
 c[14:7]<=8'b11111111;
 c[6:0]<=7'b0;
 end
-//Subnormal or zero before add/sub operation
-  //if both a and b are subnormal/zero
-else if(((a[15:7]==9'b000000000 && b[15:7]==9'b100000000)&& cntl==0)||((a[15:7]=9'b100000000 && b[15:7]=9'b000000000)&& cntl==0))
-  c<= 16'b0;  // for a+b: +0.0+(-0.0)= (+0.0) OR -0.0+(+0.0)= (+0.0)
+//checking for subnormal or zero before add/sub operation
+  
+  //if both a and b are subnormal & zero 
+  else if((((a[15:7]==9'b000000000 && b[15:7]==9'b100000000)&& cntl==0)||((a[15:7]==9'b100000000 && b[15:7]==9'b000000000)&& cntl==0)))
+  c<= 16'b0;// for a+b: +0.0+(-0.0)= (+0.0) OR -0.0+(+0.0)= (+0.0)
 else if((a[15:7]==9'b000000000 && b[15:7]==9'b100000000)&& cntl==1)
-  c<=16'b0;    // for a-b : +0.0-(-0.0)= (+0.0)
+  c<=16'b0;// for a-b : +0.0-(-0.0)= (+0.0)
 else if((a[15:7]==9'b100000000 && b[15:7]==9'b000000000)&& cntl==1)
   c<=16'b1000000000000000;  //for a-b: -0.0-(+0.0)= (-0.0)
-
-//if either a or b are subnormal or zero
-  else if((a[14:7]==8'b00000000 && b[14:7]!=8'b00000000)&&(cntl==0||cntl==1))//if a=0,b!=0 then c=0+b=b
-   c<=b;
-  else if((a[14:7]!=8'b00000000 && b[14:7]==8'b00000000)&&(cntl==0||cntl==1))  //if b=0,a!=0 then c=a+0=a
-   c<=a;
+  
+ //if either a or b are subnormal or zero
+else if((a[14:7]==8'b00000000 && b[14:7]!=8'b00000000)&&cntl==0)
+   c<=b;//c=0+b=b
+else if((a[14:7]==8'b00000000 && b[14:7]!=8'b00000000)&&cntl==1)
+    begin
+      c[15] <= ~b[15];
+      c[14:0] <= b[14:0];//c=0-b=-b
+    end 
+else if((a[14:7]!=8'b00000000 && b[14:7]==8'b00000000)&&(cntl==0||cntl==1) )
+   c<=a;//c=a+0=a or c=a-0=a 
   
 else
 begin
@@ -77,6 +84,7 @@ begin
       c[14:7]<=e;
     end
 end
+  end
 
 always_comb
 begin
@@ -212,6 +220,12 @@ e=ea;
    
     m_f=m1[6:0];
     
+
 end
+
+
 end
+
+
+    
 endmodule
