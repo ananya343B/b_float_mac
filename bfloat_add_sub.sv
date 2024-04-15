@@ -57,9 +57,9 @@ else if((a[15:7]==9'b100000000 && b[15:7]==9'b000000000)&& cntl==1)
   c<=16'b1000000000000000;  //for a-b: -0.0-(+0.0)= (-0.0)
 
 //if either a or b are subnormal or zero
-else if((a[14:7]==8'b00000000 && b[14:7]!=8'b00000000)&&(cntl==0||cntl==1))//if a=0,b!=0 then c=b
+  else if((a[14:7]==8'b00000000 && b[14:7]!=8'b00000000)&&(cntl==0||cntl==1))//if a=0,b!=0 then c=0+b=b
    c<=b;
-else if((a[14:7]!=8'b00000000 && b[14:7]==8'b00000000)&&(cntl==0||cntl==1))  //if b=0,a!=0 then c=a
+  else if((a[14:7]!=8'b00000000 && b[14:7]==8'b00000000)&&(cntl==0||cntl==1))  //if b=0,a!=0 then c=a+0=a
    c<=a;
   
 else
