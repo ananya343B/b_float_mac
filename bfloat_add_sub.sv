@@ -48,27 +48,33 @@ c[15]<=1'b1;
 c[14:7]<=8'b11111111;
 c[6:0]<=7'b0;
 end
-//checking for subnormal or zero before add/sub operation
-  
-  //if both a and b are subnormal & zero 
-  else if((((a[15:7]==9'b000000000 && b[15:7]==9'b100000000)&& cntl==0)||((a[15:7]==9'b100000000 && b[15:7]==9'b000000000)&& cntl==0)))
-  c<= 16'b0;// for a+b: +0.0+(-0.0)= (+0.0) OR -0.0+(+0.0)= (+0.0)
-else if((a[15:7]==9'b000000000 && b[15:7]==9'b100000000)&& cntl==1)
-  c<=16'b0;// for a-b : +0.0-(-0.0)= (+0.0)
-else if((a[15:7]==9'b100000000 && b[15:7]==9'b000000000)&& cntl==1)
-  c<=16'b1000000000000000;  //for a-b: -0.0-(+0.0)= (-0.0)
-  
- //if either a or b are subnormal or zero
-else if((a[14:7]==8'b00000000 && b[14:7]!=8'b00000000)&&cntl==0)
-   c<=b;//c=0+b=b
-else if((a[14:7]==8'b00000000 && b[14:7]!=8'b00000000)&&cntl==1)
-    begin
-      c[15] <= ~b[15];
-      c[14:0] <= b[14:0];//c=0-b=-b
-    end 
-else if((a[14:7]!=8'b00000000 && b[14:7]==8'b00000000)&&(cntl==0||cntl==1) )
-   c<=a;//c=a+0=a or c=a-0=a 
-  
+//checking for subnormal/zero before add/sub operation
+ //if both a and b are subnormal/zer0
+if ((a[14:7] == 8'b00000000 && b[14:7] == 8'b00000000) && (cntl == 0 || cntl == 1))
+   begin
+     if((a[15]!=b[15])&& cntl==0)
+       c<=16'b0;
+     else
+       begin
+       c[15]<=a[15];
+       c[14:0]<=15'b0;
+       end
+   end
+//if a or b are subnormal/zero
+if ((a[14:7] == 8'b00000000 || b[14:7] == 8'b00000000) && (cntl == 0 || cntl == 1)) begin
+    if (a[14:7] == 8'b00000000)
+      begin
+        if (cntl == 1) begin
+            c[15] = ~b[15]; // c = 0 - b = -b
+            c[14:0] = b[14:0];
+        end
+        else
+            c = b; // c = 0 + b = b
+    end
+    else
+        c = a; // c = a + 0 = a or c = a - 0 = a
+end
+          
 else
 begin
   if( e==8'b0)//checking for subnormal after add/sub operation
