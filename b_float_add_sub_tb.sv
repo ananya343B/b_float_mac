@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 15.04.2024 11:01:02
+// Create Date: 16.04.2024 19:34:23
 // Design Name: 
-// Module Name: b_float_add_sub_tb
+// Module Name: bfloat_add_sub_tb
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -20,53 +20,171 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module b_float_add_sub_tb();
 
-    
-    reg [15:0] a;
-    reg [15:0] b;
-    reg cntl;
-    reg clk;
+module bfloat_add_sub_tb();
 
-
-    wire [15:0] c;
-
-    
-    bfloat_add_sub dut (
-        .a(a),
-        .b(b),
-        .c(c),
-        .cntl(cntl),
-        .clk(clk)
-    );
+  logic [15:0] a, b;
+  logic cntl, clk;
+  logic [15:0] c;
 
   
-    always #5 clk = ~clk;
-    
-    initial begin
-    #100
-        // Initialize inputs
-        a = 16'b0000000000000000;
-        b = 16'b0000000000000000;
-        cntl = 0;
-        clk = 0;
-        #100
-        // Wait for some time
-    
+  bfloat_add_sub dut (
+    .a(a),
+    .b(b),
+    .c(c),
+    .cntl(cntl),
+    .clk(clk)
+  );
 
-       
-        a = 16'b0011111110111001; // 1.45
-        b = 16'b0011111110100010; // 1.27
-        cntl = 0;
-        #100;
+ 
+  initial 
+  begin
+    clk = 0;
+    forever #5 clk = ~clk;
+  end
 
-        /* Test Case 2: Subtraction of two positive numbers
-        a = 16'b0100000000000000; // 2.0
-        b = 16'b0100000000000000; // 2.0
-        cntl = 1;
-        #10;*/
-
-       #100 $finish;
-    end
   
+  initial 
+  begin
+    logic [15:0] expected_c;
+
+    // Test case 1: NaN detection
+    a = 16'b1111111110000110; // NaN a
+    b = 16'b0111111110000011; // NaN b
+    cntl = 1'b0; 
+    expected_c = 16'b1111111111111111; // Expected c: NaN
+    #10;
+    if (c == expected_c) 
+      $display("Test case 1: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+     else 
+      $display("Test case 1: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+    // Test case 2: Infinity handling
+    a = 16'b0111111110000000; // +inf a
+    b = 16'b0111111110000000; // +inf b
+    cntl = 1'b0; 
+    expected_c = 16'b0111111110000000; // Expected c: +inf
+    #10;
+    if (c == expected_c) 
+    
+      $display("Test case 2: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+     else 
+      $display("Test case 2: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+    // Test case 3: Subnormal/zero addition and subtraction
+    a = 16'b0000000000000000; // zero a
+    b = 16'b0000000000000000; // zero b
+    cntl = 1'b0; 
+    expected_c = 16'b0; // Expected c: zero
+    #10;
+    if (c == expected_c) 
+      $display("Test case 3: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+    
+     else 
+    
+      $display("Test case 3: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+
+    // Test case 4: Subtraction from zero
+    a = 16'b0000000000000000; // zero a
+    b = 16'b0111111110000000; // +inf b
+    cntl = 1'b1; 
+    expected_c = 16'b1111111110000000; // Expected c: -inf
+    #10;
+    if (c == expected_c) 
+    
+      $display("Test case 4: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+     else 
+      $display("Test case 4: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+    
+    // Test case 5: Simple addition
+    a = 16'b0100001101010000; // a = 6.5
+    b = 16'b0100000101010000; // b = 5.5
+    cntl = 1'b0; 
+    expected_c = 16'b0100010000000000; // Expected c: 12.0
+    #10;
+    if (c == expected_c) 
+    
+      $display("Test case 5: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+     else 
+      $display("Test case 5: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+    // Test case 6: Simple subtraction
+    a = 16'b0100001101010000; // a = 6.5
+    b = 16'b0100000101010000; // b = 5.5
+    cntl = 1'b1; 
+    expected_c = 16'b0011111010000000; // Expected c: 1.0
+    #10;
+    if (c == expected_c) 
+    
+      $display("Test case 6: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+     else 
+      $display("Test case 6: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+    // Test case 7: Different signs addition
+    a = 16'b0100001101010000; // a = 6.5 (positive)
+    b = 16'b1100001101010000; // b = -6.5 (negative)
+    cntl = 1'b0; 
+    expected_c = 16'b0; // Expected c: zero
+    #10;
+    if (c == expected_c) 
+    
+      $display("Test case 7: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+     else 
+      $display("Test case 7: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+    // Test case 8: Different signs subtraction
+    a = 16'b0100001101010000; // a = 6.5 (positive)
+    b = 16'b1100001101010000; // b = -6.5 (negative)
+    cntl = 1'b1; 
+    expected_c = 16'b0111111110000000; // Expected c: +inf
+    #10;
+    if (c == expected_c) 
+    
+      $display("Test case 8: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+    else 
+      $display("Test case 8: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+    // Test case 9: Same exponent, different mantissas
+    a = 16'b0100001101010000; // a = 6.5
+    b = 16'b0100001101100000; // b = 6.75
+    cntl = 1'b0; 
+    expected_c = 16'b0100010000110000; // Expected c: 13.25
+    #10;
+    if (c == expected_c) 
+    
+      $display("Test case 9: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+     else 
+      $display("Test case 9: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+    // Test case 10: Different exponents, same mantissas
+    a = 16'b0100001101010000; // a = 6.5
+    b = 16'b0100000111010000; // b = 3.25
+    cntl = 1'b0; 
+    expected_c = 16'b0100010000000000; // Expected c: 9.75
+    #10;
+    if (c == expected_c)
+    
+      $display("Test case 10: PASS. a = %b, b = %b, cntl = %b -> c = %b", a, b, cntl, c);
+     else 
+      $display("Test case 10: FAIL. a = %b, b = %b, cntl = %b -> c = %b, expected: %b", a, b, cntl, c, expected_c);
+    
+
+    
+    $finish;
+  end
+
 endmodule
+
+
+
